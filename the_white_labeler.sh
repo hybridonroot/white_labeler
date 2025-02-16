@@ -15,6 +15,13 @@ echo ""
 read -p "Enter the word you want to replace: " WORD_TO_REPLACE
 read -p "Enter the new replacement word: " REPLACEMENT_WORD
 
+echo ""
+read -p "Add a file type filter? (y/n): " ADD_FILE_FILTER
+FILE_EXTENSION=""
+if [[ "$ADD_FILE_FILTER" == "y" ]]; then
+    read -p "Enter the file extension (e.g., .txt): " FILE_EXTENSION
+fi
+
 echo "==========================================="
 echo "You are about to replace: '$WORD_TO_REPLACE' with '$REPLACEMENT_WORD'"
 echo "This includes filenames, folder names, and file contents."
@@ -32,15 +39,25 @@ echo "       EXECUTING WHITE LABELLING...       "
 echo "==========================================="
 
 # Step 1: Rename files and directories
-find . -depth -name "*$WORD_TO_REPLACE*" | while read file; do
-    new_name=$(echo "$file" | sed "s/$WORD_TO_REPLACE/$REPLACEMENT_WORD/g")
-    mv "$file" "$new_name" 2>/dev/null
-    echo "Renamed: $file -> $new_name"
-done
-
+if [[ "$FILE_EXTENSION" == "" ]]; then
+    find . -depth -name "*$WORD_TO_REPLACE*" | while read file; do
+        new_name=$(echo "$file" | sed "s/$WORD_TO_REPLACE/$REPLACEMENT_WORD/g")
+        mv "$file" "$new_name" 2>/dev/null
+        echo "Renamed: $file -> $new_name"
+    done
+else
+    find . -depth -name "*$WORD_TO_REPLACE*$FILE_EXTENSION" | while read file; do
+        new_name=$(echo "$file" | sed "s/$WORD_TO_REPLACE/$REPLACEMENT_WORD/g")
+        mv "$file" "$new_name" 2>/dev/null
+        echo "Renamed: $file -> $new_name"
+    done
+fi
 # Step 2: Replace inside files
-find . -type f -exec sed -i "s/$WORD_TO_REPLACE/$REPLACEMENT_WORD/g" {} +
-echo "Content replacement completed."
+if [[ "$FILE_EXTENSION" == "" ]]; then
+    find . -type f -exec sed -i "s/$WORD_TO_REPLACE/$REPLACEMENT_WORD/g" {} +
+else
+    find . -type f -name "*$FILE_EXTENSION" -exec sed -i "s/$WORD_TO_REPLACE/$REPLACEMENT_WORD/g" {} +
+fi
 
 echo "==========================================="
 echo " WHITE LABELLING COMPLETED SUCCESSFULLY! 🚀 "
