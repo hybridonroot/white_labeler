@@ -26,7 +26,23 @@ if [[ "$CONFIRM" != "y" ]]; then
     exit 1
 fi
 
+# Create .backup directory
+BACKUP_DIR=".backup"
+mkdir -p "$BACKUP_DIR"
+
 clear
+echo "==========================================="
+echo "       CREATING BACKUP BEFORE CHANGES...   "
+echo "==========================================="
+
+# Backup files before renaming or modifying them
+find . -type f -name "*$WORD_TO_REPLACE*" -exec cp --parents {} "$BACKUP_DIR" \;
+find . -type f -exec grep -l "$WORD_TO_REPLACE" {} \; | while read file; do
+    cp --parents "$file" "$BACKUP_DIR"
+done
+
+echo "Backup created in '$BACKUP_DIR'."
+
 echo "==========================================="
 echo "       EXECUTING WHITE LABELLING...       "
 echo "==========================================="
@@ -45,3 +61,5 @@ echo "Content replacement completed."
 echo "==========================================="
 echo " WHITE LABELLING COMPLETED SUCCESSFULLY! 🚀 "
 echo "==========================================="
+
+echo "Backup is available in '$BACKUP_DIR'. If something goes wrong, manually restore from it."
