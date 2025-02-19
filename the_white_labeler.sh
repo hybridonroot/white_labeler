@@ -36,6 +36,12 @@ if [[ "$CONFIRM" != "y" ]]; then
     read -p "Do you want to go for individual renaming? (y/n): " INDIVIDUAL_RENAME
     if [[ "$INDIVIDUAL_RENAME" == "y" ]]; then
         for file in "${FILES[@]}"; do
+            if [[ "$(basename "$file")" == .* ]]; then
+                read -p "'$file' is a hidden file. Do you want to rename it? (y/n): " HIDDEN_CONFIRM
+                if [[ "$HIDDEN_CONFIRM" != "y" ]]; then
+                    continue
+                fi
+            fi
             read -p "Rename '$file'? (y/n): " RENAME_CONFIRM
             if [[ "$RENAME_CONFIRM" == "y" ]]; then
                 new_name=$(echo "$file" | sed "s/$WORD_TO_REPLACE/$REPLACEMENT_WORD/g")
