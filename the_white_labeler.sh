@@ -22,8 +22,32 @@ echo "==========================================="
 read -p "Proceed? (y/n): " CONFIRM
 
 if [[ "$CONFIRM" != "y" ]]; then
-    echo "Operation canceled. Exiting."
-    exit 1
+    echo "Scanning for files containing '$WORD_TO_REPLACE'..."
+    FILES=()
+    while IFS= read -r file; do
+        FILES+=("$file")
+    done < <(find . -depth -name "*$WORD_TO_REPLACE*" 2>/dev/null)
+    
+    if [[ ${#FILES[@]} -eq 0 ]]; then
+        echo "No matching files found. Exiting."
+        exit 1
+    fi
+    
+    read -p "Do you want to go for individual renaming? (y/n): " INDIVIDUAL_RENAME
+    if [[ "$INDIVIDUAL_RENAME" == "y" ]]; then
+        for file in "${FILES[@]}"; do
+            read -p "Rename '$file'? (y/n): " RENAME_CONFIRM
+            if [[ "$RENAME_CONFIRM" == "y" ]]; then
+                new_name=$(echo "$file" | sed "s/$WORD_TO_REPLACE/$REPLACEMENT_WORD/g")
+                mv "$file" "$new_name" 2>/dev/null
+                echo "Renamed: $file -> $new_name"
+            fi
+        done
+        exit 0
+    else
+        echo "Operation canceled. Exiting."
+        exit 1
+    fi
 fi
 
 clear
@@ -32,14 +56,18 @@ echo "       EXECUTING WHITE LABELLING...       "
 echo "==========================================="
 
 # Step 1: Rename files and directories
-find . -depth -name "*$WORD_TO_REPLACE*" | while read file; do
+find . -depth -name "*$WORD_TO_REPLACE*" | while read -r file; do
     new_name=$(echo "$file" | sed "s/$WORD_TO_REPLACE/$REPLACEMENT_WORD/g")
     mv "$file" "$new_name" 2>/dev/null
     echo "Renamed: $file -> $new_name"
 done
 
 # Step 2: Replace inside files
-find . -type f -exec sed -i "s/$WORD_TO_REPLACE/$REPLACEMENT_WORD/g" {} +
+if [[ "$(uname)" == "Darwin" ]]; then
+    find . -type f -exec sed -i '' "s/$WORD_TO_REPLACE/$REPLACEMENT_WORD/g" {} +
+else
+    find . -type f -exec sed -i "s/$WORD_TO_REPLACE/$REPLACEMENT_WORD/g" {} +
+fi
 echo "Content replacement completed."
 
 echo "==========================================="
